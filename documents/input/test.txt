@@ -1,0 +1,6 @@
+Patient: John Smith
+Date of Birth: 12/04/1980
+Provider: Dr. Robert Williams
+Procedure: MRI Lumbar Spine
+Diagnosis: Low back pain
+Payer: ABC Health

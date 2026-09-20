@@ -1,0 +1,15 @@
+ABC Health Prior Authorization Rules
+
+MRI Lumbar Spine:
+
+Prior authorization is required for MRI Lumbar Spine.
+
+Clinical documentation should include:
+- The patient's diagnosis.
+- Duration and severity of symptoms.
+- Relevant conservative treatment history.
+- Clinical reason for requesting the MRI.
+
+The request should include the patient's information, provider information, procedure information, diagnosis, and supporting clinical documentation.
+
+Requests with missing required clinical documentation may be delayed or denied.

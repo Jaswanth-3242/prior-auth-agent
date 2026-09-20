@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+streamlit
+pymupdf
+pillow
+pytesseract
+google-genai
+chromadb
+sentence-transformers
+pydantic-settings
+apscheduler
+python-multipart
+requests
