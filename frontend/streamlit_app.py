@@ -244,7 +244,7 @@ st.divider()
 st.subheader("🔍 Track Authorization")
 st.subheader("🤖 Agent Pipeline")
 
-agent_activity = result.get("agent_activity", [])
+agent_activity = st.session_state.get("result", {}).get("agent_activity", [])
 
 for activity in agent_activity:
     agent_name = activity["agent"]
