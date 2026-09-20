@@ -1,14 +1,12 @@
-from pathlib import Path
-
 import chromadb
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 
 
-class RAGIngestor:
+class PayerRuleIngestor:
 
     def __init__(self):
-        self.embedding_model = SentenceTransformer(
-            "all-MiniLM-L6-v2"
+        self.embedding_model = TextEmbedding(
+            model_name="BAAI/bge-small-en-v1.5"
         )
 
         self.client = chromadb.PersistentClient(
@@ -19,41 +17,39 @@ class RAGIngestor:
             name="payer_rules"
         )
 
-    def ingest_file(self, file_path: str):
-        path = Path(file_path)
+    def ingest_rule(
+        self,
+        file_path: str,
+        payer_name: str
+    ):
+        with open(file_path, "r", encoding="utf-8") as file:
+            document = file.read()
 
-        if not path.exists():
-            raise FileNotFoundError(
-                f"File not found: {file_path}"
-            )
+        embedding = list(
+            self.embedding_model.embed([document])
+        )[0].tolist()
 
-        text = path.read_text(
-            encoding="utf-8"
-        ).strip()
-
-        if not text:
-            raise ValueError(
-                "The rule document is empty"
-            )
-
-        embedding = self.embedding_model.encode(
-            text
-        ).tolist()
-
-        self.collection.upsert(
-            ids=[path.stem],
-            documents=[text],
+        self.collection.add(
+            documents=[document],
             embeddings=[embedding],
             metadatas=[
                 {
-                    "payer": "ABC Health",
-                    "source": path.name
+                    "payer": payer_name,
+                    "source": file_path
                 }
-            ]
+            ],
+            ids=[payer_name]
         )
 
-        return {
-            "status": "success",
-            "file": path.name,
-            "collection": "payer_rules"
-        }
+        print(
+            f"Successfully ingested payer rule: {payer_name}"
+        )
+
+
+if __name__ == "__main__":
+    ingestor = PayerRuleIngestor()
+
+    ingestor.ingest_rule(
+        "app/rules/payer_rules/abc_health.txt",
+        "ABC Health"
+    )
