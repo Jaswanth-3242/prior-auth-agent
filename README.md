@@ -1,168 +1,150 @@
-# AI-Powered Prior Authorization System
+# 🤖 AI-Powered Prior Authorization System
 
-An AI-powered multi-agent system that automates the prior authorization workflow by extracting information from medical documents, retrieving payer rules, validating authorization requirements, simulating submission, and tracking authorization status.
+An end-to-end **AI-powered Prior Authorization system** that automates document processing, clinical information extraction, payer-rule retrieval, validation, submission simulation, and authorization tracking.
 
-> **Project Status:** Functional prototype
-> **Domain:** Healthcare AI / Intelligent Automation
-> **Backend:** FastAPI
-> **Frontend:** Streamlit
-> **AI:** Google Gemini
-> **RAG:** ChromaDB + Sentence Transformers
+The system uses a **multi-agent architecture** orchestrated through a FastAPI backend, with a Streamlit web interface.
+
+## 🚀 Live Demo
+
+**Frontend:**
+https://prior-auth-agent-frontend.onrender.com
+
+The application is deployed on Render and can be accessed directly through the link above.
 
 ---
 
-## 🚀 Overview
-
-Prior authorization is a time-consuming healthcare administrative process that requires collecting clinical information, checking payer-specific requirements, validating documentation, submitting authorization requests, and tracking their status.
-
-This project demonstrates how a **multi-agent AI architecture** can automate these steps through specialized agents coordinated by a central orchestrator.
-
-The system accepts a medical document such as a PDF, image, or text file and processes it through an end-to-end authorization pipeline.
-
-### Core Pipeline
+## 🏗️ System Architecture
 
 ```text
-Medical Document
-       ↓
-Document Agent
-       ↓
-Extraction Agent
-       ↓
-RAG Agent
-       ↓
-Validation Agent
-       ↓
-Submission Agent
-       ↓
-Tracking Agent
-       ↓
-Authorization Status
+                         USER
+                           │
+                           ▼
+                  ┌─────────────────┐
+                  │ Streamlit UI    │
+                  │    Frontend     │
+                  └────────┬────────┘
+                           │ HTTPS
+                           ▼
+                  ┌─────────────────┐
+                  │   FastAPI       │
+                  │    Backend      │
+                  └────────┬────────┘
+                           │
+                           ▼
+                  ┌─────────────────┐
+                  │   Orchestrator  │
+                  └────────┬────────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+        ▼                  ▼                  ▼
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│   Document    │  │  Extraction   │  │      RAG      │
+│     Agent     │  │     Agent     │  │     Agent     │
+└───────────────┘  └───────────────┘  └───────┬───────┘
+                                              │
+                                      ┌───────▼────────┐
+                                      │    FastEmbed   │
+                                      │   + ChromaDB   │
+                                      └───────┬────────┘
+                                              │
+        ┌─────────────────────────────────────┘
+        │
+        ▼
+┌───────────────┐
+│  Validation   │
+│     Agent     │
+└───────┬───────┘
+        │
+        ▼
+┌───────────────┐
+│  Submission   │
+│     Agent     │
+└───────┬───────┘
+        │
+        ▼
+┌───────────────┐
+│   Tracking    │
+│     Agent     │
+└───────────────┘
 ```
 
 ---
 
-## ✨ Key Features
+## 🧠 Multi-Agent Workflow
 
-### 📄 1. Document Processing
+### 1. 📄 Document Agent
 
-Supports:
+Processes uploaded authorization documents.
 
-* PDF documents
-* PNG/JPG/JPEG images
-* Text files
-* Embedded PDF text extraction
-* OCR fallback for scanned documents
+Supported formats:
 
-Technologies:
+* PDF
+* PNG
+* JPG/JPEG
+* TXT
 
-* PyMuPDF
-* Tesseract OCR
-* Pillow
+For PDFs, embedded text is extracted when available.
 
----
+For scanned/image documents, **Tesseract OCR** is used to extract text.
 
-### 🤖 2. AI-Based Information Extraction
+### 2. 🔍 Extraction Agent
 
-The Extraction Agent uses **Google Gemini** to convert unstructured clinical documents into structured authorization data.
+Uses **Google Gemini** to extract structured information from the document.
 
-It extracts:
+Extracted information includes:
 
 * Patient information
-* Date of birth
 * Provider information
 * Procedure
 * Diagnosis
 * Payer
 * Clinical notes
 
-The extracted information is validated using Pydantic schemas.
+### 3. 🔎 RAG Agent
 
----
+Retrieves relevant payer rules from the local knowledge base.
 
-### 🔎 3. Retrieval-Augmented Generation
+Technology:
 
-The RAG component retrieves relevant payer rules from a local vector database.
+* **FastEmbed**
+* **ChromaDB**
+* `BAAI/bge-small-en-v1.5` embedding model
 
-Current prototype stack:
+The retrieved payer rules are passed to the validation stage.
 
-* ChromaDB
-* Sentence Transformers
-* `all-MiniLM-L6-v2`
+### 4. ✅ Validation Agent
 
-Example:
+Validates the authorization request against:
 
-```text
-Query:
-ABC Health MRI Lumbar Spine prior authorization requirements
-
-        ↓
-
-Vector Search
-
-        ↓
-
-Relevant payer policy
-
-        ↓
-
-Validation Agent
-```
-
-This architecture allows payer-specific rules to be retrieved dynamically rather than hard-coded entirely into the validation workflow.
-
----
-
-### ✅ 4. Authorization Validation
-
-The Validation Agent combines:
-
-* Extracted authorization information
+* Required patient information
+* Provider information
+* Procedure information
+* Diagnosis
+* Clinical documentation
 * Retrieved payer rules
-* Custom rule-engine logic
 
-It checks for required information and supporting clinical documentation.
+The rule engine identifies:
 
-The validation result contains:
+* Errors
+* Warnings
+* Validation status
 
-```json
-{
-  "status": "VALID",
-  "errors": [],
-  "warnings": []
-}
-```
+### 5. 📤 Submission Agent
 
-Warnings can identify potentially missing documentation without necessarily preventing submission.
+Simulates submission of a validated authorization request.
 
----
-
-### 📤 5. Submission Agent
-
-The Submission Agent currently **simulates** payer submission.
-
-For a valid request, it generates an authorization ID such as:
+A unique authorization ID is generated, for example:
 
 ```text
-AUTH-6D20AC60
+AUTH-XXXXXXXX
 ```
 
-Example response:
+Invalid requests are not submitted.
 
-```json
-{
-  "status": "SUBMITTED",
-  "submission_id": "AUTH-6D20AC60",
-  "message": "Authorization submitted successfully."
-}
-```
+### 6. 📊 Tracking Agent
 
-No real payer portal or payer API is accessed in this prototype.
-
----
-
-### 📊 6. Authorization Tracking
-
-The Tracking Agent maintains authorization status using SQLite.
+Stores and tracks authorization status using SQLite.
 
 Supported statuses include:
 
@@ -173,79 +155,7 @@ APPROVED
 DENIED
 ```
 
-Example:
-
-```text
-Authorization ID: AUTH-D6452CFB
-
-Current Status: APPROVED
-```
-
----
-
-## 🧠 Multi-Agent Architecture
-
-The system consists of six specialized agents coordinated by an Orchestrator.
-
-| Agent            | Responsibility                                               |
-| ---------------- | ------------------------------------------------------------ |
-| Document Agent   | Extract text from uploaded documents                         |
-| Extraction Agent | Convert unstructured text into structured authorization data |
-| RAG Agent        | Retrieve relevant payer policies                             |
-| Validation Agent | Validate authorization against payer requirements            |
-| Submission Agent | Simulate authorization submission                            |
-| Tracking Agent   | Store and retrieve authorization status                      |
-
-### Orchestrator
-
-The Orchestrator controls the complete workflow:
-
-```text
-Upload
-  ↓
-Document Processing
-  ↓
-Information Extraction
-  ↓
-Payer Rule Retrieval
-  ↓
-Validation
-  ↓
-Submission
-  ↓
-Tracking
-```
-
-It also records the processing stage and agent activity so that the frontend can display the workflow.
-
----
-
-## 🏗️ System Architecture
-
-```text
-                     ┌──────────────────────┐
-                     │  Streamlit Frontend  │
-                     └──────────┬───────────┘
-                                │
-                                ▼
-                     ┌──────────────────────┐
-                     │    FastAPI Backend   │
-                     └──────────┬───────────┘
-                                │
-                         Orchestrator
-                                │
-          ┌─────────┬───────────┼───────────┬──────────┐
-          ▼         ▼           ▼           ▼          ▼
-       Document  Extraction    RAG      Validation Submission
-        Agent      Agent      Agent       Agent      Agent
-          │          │          │           │          │
-          │          ▼          ▼           │          ▼
-          │       Gemini    ChromaDB        │       SQLite
-          │                    │            │
-          ▼                    ▼            ▼
-       PyMuPDF              Payer Rules   Rule Engine
-       Tesseract
-```
+Authorization records can be retrieved using their submission ID.
 
 ---
 
@@ -253,40 +163,39 @@ It also records the processing stage and agent activity so that the frontend can
 
 ### Backend
 
-* Python 3.12
+* Python
 * FastAPI
 * Uvicorn
 * Pydantic
+* SQLite
 
 ### AI / NLP
 
 * Google Gemini
-* Google GenAI SDK
-* Sentence Transformers
+* FastEmbed
+* ONNX Runtime
 
 ### RAG
 
 * ChromaDB
-* `all-MiniLM-L6-v2`
+* `BAAI/bge-small-en-v1.5`
 
 ### Document Processing
 
 * PyMuPDF
-* Tesseract OCR
 * Pillow
-
-### Database
-
-* SQLite
+* Tesseract OCR
+* pytesseract
 
 ### Frontend
 
 * Streamlit
+* Requests
 
-### Deployment / Infrastructure
+### Deployment
 
 * Docker
-* Docker Compose
+* Render
 * GitHub
 
 ---
@@ -301,9 +210,9 @@ prior-auth-agent/
 │   │   ├── document_agent.py
 │   │   ├── extraction_agent.py
 │   │   ├── rag_agent.py
+│   │   ├── validation_agent.py
 │   │   ├── submission_agent.py
-│   │   ├── tracking_agent.py
-│   │   └── validation_agent.py
+│   │   └── tracking_agent.py
 │   │
 │   ├── database/
 │   │   ├── database.py
@@ -325,7 +234,6 @@ prior-auth-agent/
 │   │   └── authorization.py
 │   │
 │   ├── utils/
-│   │   ├── logging.py
 │   │   └── ocr.py
 │   │
 │   └── main.py
@@ -334,19 +242,17 @@ prior-auth-agent/
 │   └── streamlit_app.py
 │
 ├── documents/
-│   └── input/
 │
 ├── Dockerfile
-├── Dockerfile.streamlit
-├── docker-compose.yml
 ├── requirements.txt
+├── runtime.txt
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## ⚙️ Local Setup
+## ⚙️ Running Locally
 
 ### 1. Clone the repository
 
@@ -359,11 +265,6 @@ cd prior-auth-agent
 
 ```bash
 python3 -m venv venv
-```
-
-Activate it:
-
-```bash
 source venv/bin/activate
 ```
 
@@ -381,330 +282,153 @@ Create a `.env` file:
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
-Do not commit `.env` to GitHub.
-
----
-
-## 🧠 Initialize the RAG Database
-
-Run:
+### 5. Start the FastAPI backend
 
 ```bash
-python3 -m app.rag.ingest
-```
-
-This creates the local ChromaDB vector store containing the payer rules.
-
----
-
-## ▶️ Run the Backend
-
-Start FastAPI:
-
-```bash
-python3 -m uvicorn app.main:app --reload
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 Backend:
 
 ```text
-http://127.0.0.1:8000
-```
-
-Interactive API documentation:
-
-```text
-http://127.0.0.1:8000/docs
+http://localhost:8000
 ```
 
 Health check:
 
 ```text
-http://127.0.0.1:8000/health
+http://localhost:8000/health
 ```
 
----
-
-## 🖥️ Run the Frontend
+### 6. Start the Streamlit frontend
 
 In another terminal:
 
 ```bash
-source venv/bin/activate
 streamlit run frontend/streamlit_app.py
 ```
 
-The Streamlit application will normally be available at:
+Frontend:
 
 ```text
 http://localhost:8501
 ```
 
-The frontend uses the `API_URL` environment variable to locate the backend.
+---
 
-Example:
+## 🐳 Docker Deployment
+
+The backend Docker image includes the system-level **Tesseract OCR** dependency required for scanned/image documents.
+
+Build:
 
 ```bash
-export API_URL=http://127.0.0.1:8000
+docker build -t prior-auth-agent .
 ```
 
----
-
-## 🐳 Run with Docker
-
-### Build the backend
+Run:
 
 ```bash
-docker build -t prior-auth-api .
+docker run --rm -p 8000:8000 --env-file .env prior-auth-agent
 ```
 
-### Run the backend
-
-```bash
-docker run --rm \
-  -p 8000:8000 \
-  --env-file .env \
-  prior-auth-api
-```
-
-### Streamlit
-
-The project also contains:
-
-```text
-Dockerfile.streamlit
-```
-
-for containerizing the frontend.
-
-Docker Compose configuration is included in:
-
-```text
-docker-compose.yml
-```
+The Docker deployment is used for the production backend because it allows Tesseract OCR to be installed inside the container.
 
 ---
 
-## 🔌 API Endpoints
+## 🔐 Environment Variables
 
-### Health Check
+The application requires:
 
-```http
-GET /health
+```env
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
-Used to verify that the backend is running.
+Never commit `.env` or API keys to GitHub.
 
 ---
 
-### Process Authorization
+## 📋 Example Workflow
 
-```http
-POST /api/authorizations
-```
-
-Accepts an authorization document and sends it through the complete multi-agent pipeline.
-
-The response contains:
-
-* Document extraction
-* Structured authorization information
-* Retrieved/validated rules
-* Validation result
-* Submission result
-* Tracking information
-* Agent activity
-
----
-
-### Track Authorization
-
-```http
-GET /api/authorizations/{submission_id}
-```
-
-Example:
+A typical request follows this flow:
 
 ```text
-GET /api/authorizations/AUTH-0A981D8A
-```
-
-Returns the current authorization status.
-
----
-
-## 🧪 Example Workflow
-
-A sample request can contain:
-
-```text
-Patient: John Smith
-Date of Birth: 12/04/1980
-
-Provider: Dr. Robert Williams
-
-Procedure: MRI Lumbar Spine
-
-Diagnosis: Low back pain
-
-Payer: ABC Health
-
-Clinical Notes:
-Patient reports persistent lower back pain.
-MRI lumbar spine has been requested for further evaluation.
-```
-
-The system processes the request:
-
-```text
-Document
-   ↓
-Extract Patient / Provider / Procedure / Diagnosis / Payer
-   ↓
-Retrieve ABC Health rules
-   ↓
-Validate documentation
-   ↓
+Upload authorization document
+          ↓
+Document extraction / OCR
+          ↓
+Clinical information extraction
+          ↓
+Retrieve relevant payer rules
+          ↓
+Validate authorization
+          ↓
+Submit if valid
+          ↓
 Generate authorization ID
-   ↓
-Track status
-```
-
-Example:
-
-```text
-AUTH-6D20AC60
-Status: SUBMITTED
+          ↓
+Track authorization status
 ```
 
 ---
 
-## 🔐 Security Considerations
+## 🎯 Current Capabilities
 
-This project is an academic/prototype implementation.
-
-The repository intentionally excludes:
-
-```text
-.env
-venv/
-authorizations.db
-chroma_db/
-__pycache__/
-```
-
-API credentials should be stored using environment variables rather than source code.
-
-For a production healthcare system, additional controls would be required, including:
-
-* Authentication and authorization
-* Encryption in transit and at rest
-* Secure secrets management
-* Audit logging
-* PHI protection
-* Access controls
-* Data retention policies
-* Secure database infrastructure
-* Production-grade monitoring
-* Compliance review
+* ✅ PDF document processing
+* ✅ Image/scanned document OCR
+* ✅ Structured clinical information extraction
+* ✅ Gemini-powered extraction
+* ✅ RAG-based payer-rule retrieval
+* ✅ FastEmbed-based embeddings
+* ✅ ChromaDB vector search
+* ✅ Rule-based authorization validation
+* ✅ Validation warnings and errors
+* ✅ Simulated authorization submission
+* ✅ Authorization ID generation
+* ✅ SQLite tracking
+* ✅ Multi-agent orchestration
+* ✅ Streamlit web interface
+* ✅ FastAPI REST API
+* ✅ Docker deployment
+* ✅ Public Render deployment
 
 ---
 
-## ⚠️ Current Prototype Limitations
+## ⚠️ Prototype Limitations
 
-### Synthetic payer rules
+This project is currently a **working prototype**.
 
-The current payer policy is a local synthetic rule set:
-
-```text
-ABC Health
-```
-
-It is included for demonstration purposes and does not represent an actual payer policy.
-
-### Simulated submission
-
-The Submission Agent generates an authorization ID locally.
-
-It does **not** submit requests to a real insurance company or payer portal.
-
-### Local storage
-
-SQLite and ChromaDB are currently used for the prototype.
-
-A production system would use managed persistent infrastructure.
-
-### Healthcare compliance
-
-This prototype should not be used with real patient information or for actual clinical/insurance decisions.
+* Payer rules currently use a synthetic/local payer rule dataset.
+* Authorization submission is simulated and does not connect to real payer portals or APIs.
+* Tracking uses a local SQLite database.
+* Production deployment would require additional healthcare security controls.
+* Real-world deployment would require appropriate handling of PHI, authentication, authorization, encryption, auditing, compliance, and secure data storage.
 
 ---
 
-## 🚀 Deployment Architecture
+## 🔮 Future Improvements
 
-The intended demonstration deployment is:
-
-```text
-                    GitHub
-                       │
-              ┌────────┴────────┐
-              │                 │
-              ▼                 ▼
-        FastAPI Backend   Streamlit Frontend
-           Render          Streamlit Cloud
-              │                 │
-              └─────── API ─────┘
-                       │
-                       ▼
-                  Gemini API
-```
-
-The backend is containerized using Docker, while the Streamlit frontend communicates with the deployed FastAPI API.
-
----
-
-## 🔮 Future Enhancements
-
-Potential extensions include:
+Potential future enhancements include:
 
 * Integration with real payer APIs
-* Automated payer policy ingestion
-* More sophisticated clinical rule validation
-* Additional payer-specific rule sets
+* Automated payer portal submission
+* Additional payer rule databases
+* More advanced clinical validation
 * Human-in-the-loop review
 * Authentication and role-based access control
-* Production PostgreSQL database
-* Persistent vector database
-* Authorization analytics dashboard
-* Email/SMS notifications
-* Advanced document classification
-* Explainable validation decisions
-* Automated denial-risk detection
-* Production monitoring and audit trails
+* Production-grade database
+* Audit logging
+* Notification services
+* Authorization status webhooks
+* Improved document classification
+* FHIR/HL7 integration
+* Healthcare compliance and security controls
 
 ---
 
-## 📌 Project Highlights
+## 👨‍💻 Author
 
-This project demonstrates:
+**Jaswanth-3242**
 
-* Multi-agent AI architecture
-* LLM-based information extraction
-* Retrieval-Augmented Generation
-* Vector databases
-* Rule-based validation
-* OCR and document processing
-* REST API development
-* Streamlit application development
-* SQLite persistence
-* Docker containerization
-* Git/GitHub workflow
-* End-to-end AI workflow orchestration
-
----
-
-## 📄 Disclaimer
-
-This project is an academic and technical prototype designed to demonstrate AI-driven workflow automation.
-
-The payer rules and authorization submission workflow are simulated. The system is **not intended for real-world medical, insurance, clinical, or financial decision-making**.
+GitHub:
+https://github.com/Jaswanth-3242
